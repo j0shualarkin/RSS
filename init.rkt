@@ -68,12 +68,12 @@ ryan culpepper wrote syntax/parse
 (require (for-syntax racket/list))
 (require (for-syntax syntax/parse))
 
-(defstx (define-hello stx)
+(defstx (define-goodbye stx)
   (syntax-parse stx
     [(_ name:id ...) #'(define-values (name ...)
                          (values (begin 'name "good bye") ...))]))
  
-(define-hello world good bye damn it)
+(define-goodbye world good bye damn it)
 
 (check-equal? world
               "good bye")
@@ -122,5 +122,6 @@ ryan culpepper wrote syntax/parse
 (check-equal? (some #f #f) #f)
 (check-equal? (some 1 2 #f (displayln 'hello?)) (list 1 2))
 (check-equal? (some #f #f #f #f #f #f) #f)
+
 
 
