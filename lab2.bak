@@ -1,8 +1,0 @@
-#lang racket
-
-(require (for-syntax syntax-parse))
-
-(define-syntax (and/v stx)
-  (syntax-parse stx #:literals (=>)
-    ((_ e:expr => var:id e2:expr) #'(begin (define var e)
-                                           e2))))
