@@ -204,6 +204,7 @@ Expression = (function-application Variable Expression ...)
        [else
         (define msg (format "wrong number of arguments for ~a" (syntax-e #'f)))
         (raise-syntax-error #f msg stx)])]
+    
     [(_ f:id arg:expr ...)
      (define n-args (length (syntax->list #'(arg ...))))
      (define-values (arity the-function) (lookup #'f stx))
@@ -249,7 +250,14 @@ Expression = (function-application Variable Expression ...)
 (define-syntax (define-as-next stx)
   (syntax-parse stx
     ((_ var:id) #'(begin (define var next)
-                         (set! next (+ next 1))))))
+                         (set! next (add1 next))))))
+
+#;(define-for-syntax next 0)
+
+#;(define-syntax (define-as-next stx)
+  (syntax-parse stx
+    ((_ var:id) (set! next (+ next 1))
+                #`(define var #,(sub1 next)))))
 
 ;(define-as-next x)
 ;(define-as-next y)
@@ -264,4 +272,7 @@ Expression = (function-application Variable Expression ...)
 (check-equal? x 0)
 (check-equal? 1y 1)
 (check-equal? another-y 2)
+
+
+
 

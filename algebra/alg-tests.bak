@@ -1,0 +1,5 @@
+#lang algebra
+
+(define (my-sqr a) (plus (mult a a) (mult (-- a) (-- a))))
+
+(my-sqr 4)

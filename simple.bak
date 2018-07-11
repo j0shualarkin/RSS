@@ -1,0 +1,7 @@
+#lang racket
+
+(provide #%module-begin
+         zero)
+
+(define-syntax (zero stx)
+  #'0)
