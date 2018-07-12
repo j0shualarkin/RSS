@@ -1,0 +1,89 @@
+#lang racket
+
+; e.g., save this to file "morn-typed-lang.rkt"
+(require (for-syntax syntax/parse syntax/stx))
+(provide (rename-out [typechecking-mb #%module-begin])
+         + if)
+ 
+; A TyStx is a syntax object representing a type.
+; A ExprStx is a syntax object representing an expression.
+; A IdStx is an identifier syntax object.
+ 
+(begin-for-syntax
+ 
+  ; TODO: complete this function
+  ; compute: ExprStx -> TyStx
+  ; computes the type of the given term
+  (define (compute e)
+    (syntax-parse e
+      [:integer #'Int]
+      [:string #'String]
+      [:boolean #'Bool]
+      [((~literal if) e1 e2 e3)
+       #:when (check #'e1 #'Bool)
+       (let ([τ (compute #'e2)])
+         (if (check #'e3 τ) τ (raise-syntax-error
+          'compute/if
+          (format "could not check type: ~a for ~a" (syntax->datum #'e3) (syntax->datum #'e2)))))]
+      [((~literal +) e1 e2)
+       #'???]
+      ; TODO: fill in above cases, and other cases ...
+      [e (raise-syntax-error
+          'compute
+          (format "could not compute type for term: ~a" (syntax->datum #'e)))]))
+ 
+  ; check : ExprStx TyStx -> Bool
+  ; checks that the given term has the given type
+  (define (check e t-expected)
+    (define t (compute e))
+    (or (type=? t t-expected)
+        (raise-syntax-error
+         'check
+         (format "error while checking term ~a: expected ~a; got ~a"
+                 (syntax->datum e)
+                 (syntax->datum t-expected)
+                 (syntax->datum t)))))
+ 
+  ; type=? : TyStx TyStx -> Bool
+  ; type equality here is is stx equality
+  (define (type=? t1 t2)
+    (or (and (identifier? t1) (identifier? t2) (free-identifier=? t1 t2))
+        (and (stx-pair? t1) (stx-pair? t2)
+             (= (length (syntax->list t1))
+                (length (syntax->list t2)))
+             (andmap type=? (syntax->list t1) (syntax->list t2))))))
+ 
+(define-syntax typechecking-mb
+  (syntax-parser
+    [(_ e ...)
+     ; prints out each term e and its type, it if has one;
+     ; otherwise raises type error
+     #:do[(stx-map
+           (λ (e)
+               (printf "~a : ~a\n"
+                       (syntax->datum e)
+                       (syntax->datum (compute e))))
+           #'(e ...))]
+     ; this language only checks types,
+     ; it doesn't run anything
+     #'(#%module-begin (void))]))
+And here is an example program to try with your typed language.
+#lang s-exp "morn-typed-lang.rkt"
+; e.g., save this to file "morn-typed-prog.rkt"
+5
+#f
+"five"
+; 1.1 ;; err
+; (if 1 2 3) ;; err
+(if #f 2 3)
++
+(+ 1 2)
+; (+ #f 1) ;; err
+ 
+; Running the program prints:
+; 5 : Int
+; #f : Bool
+; five : String
+; (if #f 2 3) : Int
+; + : (-> Int Int Int)
+; (+ 1 2) : Int
