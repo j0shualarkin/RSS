@@ -71,8 +71,7 @@
       
       [e (raise-syntax-error
           'compute
-          (format "could not compute type for term: ~a" (syntax->datum #'e))
-          )]))
+          (format "could not compute type for term: ~a" (syntax->datum #'e)))]))
   
   ; check : ExprStx TyStx -> Bool
   ; checks that the given term has the given type
@@ -100,13 +99,13 @@
   (syntax-parser
     #:datum-literals (defun)
     [(_ (defun (name [x:id  τ] ...)  τb body) e ...)
-    
+    (displayln 0)
     #`(typechecking-mb #,(extend-env (mk-empty-env)
                                      #'name
                                      #'(-> τ ... τb))
                        e ...)]
     [(_ Γ (defun (name [x:id  τ] ...)  τb body) e ...)
-    
+    (displayln 1)
      #`(typechecking-mb #,(extend-env (syntax->datum #'Γ)
                                       #'name
                                       #'(-> τ ... τb))
@@ -114,28 +113,30 @@
     [(_ Γ e ...)    
     ; prints out each term e and its type, it if has one;
     ; otherwise raises type error
-    #:do[(stx-map
+     #:when (not (syntax? (syntax->datum #'Γ)))
+     #:do[(stx-map
           (λ (e)
-            
+            ;(displayln (syntax->datum #'Γ))
             (printf "~a : ~a\n"
                     (syntax->datum e)
-                    (syntax->datum (compute e (syntax->datum #'Γ)))))
+                    (syntax->datum (compute e (mk-empty-env)#;(syntax->datum #'Γ)))))
           #'(e ...))]
     ; this language only checks types,
     ; it doesn't run anything
+     (displayln "dog")
     #'(#%module-begin (void))]
     [(_ e ...)    
     ; prints out each term e and its type, it if has one;
     ; otherwise raises type error
     #:do[(stx-map
           (λ (e)
-            
             (printf "~a : ~a\n"
                     (syntax->datum e)
                     (syntax->datum (compute e (mk-empty-env)))))
-          #'(e ...))]
+          #`(#,(mk-empty-env) e ...))]
     ; this language only checks types,
     ; it doesn't run anything
+    (displayln 3)
     #'(#%module-begin (void))]
    
    ))

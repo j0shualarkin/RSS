@@ -1,7 +1,8 @@
 #lang s-exp "lab.rkt"
 ;And here is an example program to try with your typed language.
 ; e.g., save this to file "morn-typed-prog.rkt"
-;5
+5
+2
 ;#f
 ;"five"
 ;; 1.1 ;; err
@@ -32,7 +33,7 @@
    (λ ([y : Int])
      (+ x y))) "cat") 3) ;; err
 
-
+#;#;
 (defun (id [x Int]) Int x) ; (-> Int Int)
 (id 5)
 
