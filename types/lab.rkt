@@ -6,16 +6,16 @@
                      ))
 (provide (rename-out [typechecking-mb #%module-begin])
          + if λ)
- 
+
 ; A TyStx is a syntax object representing a type.
 ; A ExprStx is a syntax object representing an expression.
 ; A IdStx is an identifier syntax object.
- 
+
 (begin-for-syntax
 
-  
+
 ; A TyEnv is a [ImmutableFreeIdTableOf IdStx -> TyStx]
- 
+
 ; mk-empty-env : -> TyEnv
 ; Returns a new type environment with no bindings.
   (define (mk-empty-env)
@@ -26,7 +26,7 @@
   ; add-to-env : TyEnv IdStx TyStx -> TyEnv
   ; Returns a new type environment that extends the given env with the given binding.
   (define (extend-env Γ id τ)
-    (free-id-table-set* Γ id τ)) 
+    (free-id-table-set* Γ id τ))
   ; lookup-env : TyEnv IdStx -> TyStx or #f
   ; Looks up the given id in the given env and returns corresponding type. Returns false if the id is not in the env.
   (define (lookup-env Γ x)
@@ -35,9 +35,9 @@
   ; compute: ExprStx -> TyStx
   ; computes the type of the given term
   (define (compute e Γ)
-    (syntax-parse e 
+    (syntax-parse e
       [(~literal +) #'(-> Int (-> Int Int))]
-      [:id (displayln e)
+      [:id
            (let ([myb-type (lookup-env Γ e)])
              (if myb-type myb-type (raise-syntax-error 'compute/var "no type for given identifier:" e)))]
       [:integer #'Int]
@@ -50,13 +50,13 @@
              (raise-syntax-error
               'compute/if
               (format "could not check type: ~a for ~a" (syntax->datum #'e3) (syntax->datum #'e2)))))]
-      
+
       [((~literal +) e1 e2)
        (if (and (check #'e1 #'Int Γ) (check #'e2 #'Int Γ)) #'Int
            (raise-syntax-error 'compute/+
                                (format "error in types: ~a ~a" #'e1 #'e2)))]
-      
-      
+
+
       [((~literal λ) ([v:id : τ]) b) #`(-> τ #,(compute #'b (extend-env Γ #'v #'τ)))]
 
       [(e1 e2) (with-syntax ([A (compute #'e2 Γ)])
@@ -68,12 +68,12 @@
                                                                (syntax-e #'X)
                                                                (syntax-e #'A))
                                                        e))))))]
-      
+
       [e (raise-syntax-error
           'compute
           (format "could not compute type for term: ~a" (syntax->datum #'e))
           )]))
-  
+
   ; check : ExprStx TyStx -> Bool
   ; checks that the given term has the given type
   (define (check e t-expected Γ)
@@ -86,7 +86,7 @@
                  (syntax->datum t-expected)
                  (syntax->datum t))
          e)))
- 
+
   ; type=? : TyStx TyStx -> Bool
   ; type equality here is is stx equality
   (define (type=? t1 t2)
@@ -94,51 +94,37 @@
         (and (stx-pair? t1) (stx-pair? t2)
              (= (length (syntax->list t1))
                 (length (syntax->list t2)))
-             (andmap type=? (syntax->list t1) (syntax->list t2))))))
- 
+             (andmap type=? (syntax->list t1) (syntax->list t2)))))
+
+  (define (do-typchecking stx Γ)
+    (unless (null? stx)
+      (begin (define data (stx-car stx))
+             (syntax-parse data #:datum-literals (defun)
+                           [(defun (name [x:id : t] ...) tout b) (do-typchecking (stx-cdr stx)
+                                                                          (extend-env Γ
+                                                                                      #'name
+                                                                                      #'(-> t ... tout)))]
+                           [data (begin
+                                   (printf "~a : ~a\n" (syntax->datum #'data)
+                                           (syntax->datum (compute #'data Γ)))
+                                   (do-typchecking (stx-cdr stx) Γ))])))))
+
+
+
 (define-syntax typechecking-mb
   (syntax-parser
-    #:datum-literals (defun)
-    [(_ (defun (name [x:id  τ] ...)  τb body) e ...)
-    
-    #`(typechecking-mb #,(extend-env (mk-empty-env)
-                                     #'name
-                                     #'(-> τ ... τb))
-                       e ...)]
-    [(_ Γ (defun (name [x:id  τ] ...)  τb body) e ...)
-    
-     #`(typechecking-mb #,(extend-env (syntax->datum #'Γ)
-                                      #'name
-                                      #'(-> τ ... τb))
-                        e ...)]
-    [(_ Γ e ...)    
+    [(_ e ...)
     ; prints out each term e and its type, it if has one;
-    ; otherwise raises type error
-    #:do[(stx-map
-          (λ (e)
-            
-            (printf "~a : ~a\n"
-                    (syntax->datum e)
-                    (syntax->datum (compute e (syntax->datum #'Γ)))))
-          #'(e ...))]
+     ; otherwise raises type error
     ; this language only checks types,
-    ; it doesn't run anything
-    #'(#%module-begin (void))]
-    [(_ e ...)    
-    ; prints out each term e and its type, it if has one;
-    ; otherwise raises type error
-    #:do[(stx-map
-          (λ (e)
-            
-            (printf "~a : ~a\n"
-                    (syntax->datum e)
-                    (syntax->datum (compute e (mk-empty-env)))))
-          #'(e ...))]
-    ; this language only checks types,
-    ; it doesn't run anything
-    #'(#%module-begin (void))]
-   
+     ; it doesn't run anything
+     ;; #:do[(stx-map
+     ;;       (λ (e)
+     ;;         (printf "~a : ~a\n"
+     ;;                 (syntax->datum e)
+     ;;                 (syntax->datum (compute e (mk-empty-env)))))
+     ;;       #'(e ...))]
+     #:do[(do-typchecking #'(e ...) (mk-empty-env))]
+     #'(#%module-begin (void))]
+
    ))
-
-
-
