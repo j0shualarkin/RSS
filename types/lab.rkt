@@ -71,8 +71,7 @@
 
       [e (raise-syntax-error
           'compute
-          (format "could not compute type for term: ~a" (syntax->datum #'e))
-          )]))
+          (format "could not compute type for term: ~a" (syntax->datum #'e)))]))
 
   ; check : ExprStx TyStx -> Bool
   ; checks that the given term has the given type
@@ -125,6 +124,4 @@
      ;;                 (syntax->datum (compute e (mk-empty-env)))))
      ;;       #'(e ...))]
      #:do[(do-typchecking #'(e ...) (mk-empty-env))]
-     #'(#%module-begin (void))]
-
-   ))
+     #'(#%module-begin (void))]))

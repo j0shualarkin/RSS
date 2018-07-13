@@ -4,6 +4,10 @@
 5
 #f
 "five"
+2
+;#f
+;"five"
+;; 1.1 ;; err
 ;; (if 1 2 3) ;; err
 ;; (if #f 2 3)
 ;; (if (if #f #t #f) 2 3)
@@ -31,10 +35,8 @@
    (λ ([y : Int])
      (+ x y))) "cat") 3) ;; err
 
-
-(defun (id [x : Int] [y : Int]) Int x) ; (-> Int Int)
-(id 5)
-id
+(defun (id [x : Int]) Int x) ; (-> Int Int)
+(id 3)
 (id "String")
 
 
